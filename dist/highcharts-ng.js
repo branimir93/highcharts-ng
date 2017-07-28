@@ -1,6 +1,6 @@
 /**
  * highcharts-ng
- * @version v1.1.1-dev - 2017-05-14
+ * @version v1.1.1-dev - 2017-07-28
  * @link https://github.com/pablojim/highcharts-ng
  * @author Barry Fitzgerald <>
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -28,7 +28,7 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
     .component('highchart', {
       bindings: {
         config: '<',
-        changeDetection: '<'
+        changeDetection: '&'
       },
       controller: HighChartNGController
     });
@@ -42,8 +42,10 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
     var ctrl = this;
     var prevConfig = {};
     var mergedConfig = {};
-    var detector = ctrl.changeDetection || angular.equals;
+    var detector;
     this.$onInit = function () {
+      detector = ctrl.changeDetection || angular.equals;
+
       ctrl.config.getChartObj = function () {
         return ctrl.chart;
       };

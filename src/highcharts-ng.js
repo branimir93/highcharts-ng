@@ -20,7 +20,7 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
     .component('highchart', {
       bindings: {
         config: '<',
-        changeDetection: '<'
+        changeDetection: '&'
       },
       controller: HighChartNGController
     });
@@ -34,8 +34,10 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
     var ctrl = this;
     var prevConfig = {};
     var mergedConfig = {};
-    var detector = ctrl.changeDetection || angular.equals;
+    var detector;
     this.$onInit = function () {
+      detector = ctrl.changeDetection || angular.equals;
+
       ctrl.config.getChartObj = function () {
         return ctrl.chart;
       };
