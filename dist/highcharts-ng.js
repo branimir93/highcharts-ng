@@ -1,68 +1,35 @@
 /**
  * highcharts-ng
- * @version v1.1.1-dev - 2017-07-28
+ * @version v1.1.1-dev - 2017-07-31
  * @link https://github.com/pablojim/highcharts-ng
  * @author Barry Fitzgerald <>
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 
-if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports){
-  module.exports = 'highcharts-ng';
-}
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define(['highcharts', 'angular'], factory);
 
-(function () {
-  'use strict';
-  /*global angular: false*/
-  var Highcharts = null;
-
-  if (window && window.Highcharts) {
-    Highcharts = window.Highcharts;
-  } else if (typeof module !== 'undefined' && typeof exports !== 'undefined' &&
-    module.exports === exports && module.exports === 'highcharts-ng'
-  ) {
-        Highcharts = require('highcharts');
+  } else if (typeof module === 'object' && module.exports) {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory(require('highcharts'), require('angular'));
+  } else {
+    // Browser globals (root is window)
+    factory(root.Highcharts, root.angular);
   }
-
-
-  angular.module('highcharts-ng', [])
-    .component('highchart', {
-      bindings: {
-        config: '<',
-        changeDetection: '&'
-      },
-      controller: HighChartNGController
-    });
+}(window, function (Highcharts, angular) {
+  'use strict';
 
   HighChartNGController.$inject = ['$element', '$timeout'];
-
   function HighChartNGController($element, $timeout) {
     var seriesId = 0;
     var yAxisId = 0;
     var xAxisId = 0;
     var ctrl = this;
-    var prevConfig = {};
     var mergedConfig = {};
-    var detector;
-    this.$onInit = function () {
-      detector = ctrl.changeDetection || angular.equals;
-
-      ctrl.config.getChartObj = function () {
-        return ctrl.chart;
-      };
-      prevConfig = angular.merge({}, ctrl.config);
-      mergedConfig = getMergedOptions($element, ctrl.config, seriesId);
-      ctrl.chart = new Highcharts[getChartType(mergedConfig)](mergedConfig);
-
-      // Fix resizing bug
-      // https://github.com/pablojim/highcharts-ng/issues/550
-      var originalWidth = $element[0].clientWidth;
-      var originalHeight = $element[0].clientHeight;
-      $timeout(function () {
-        if ($element[0].clientWidth !== originalWidth || $element[0].clientHeight !== originalHeight) {
-          ctrl.chart.reflow();
-        }
-      }, 0, false);
-    };
 
     this.removeItems = function (newItems, chartItems, id, toIgnore) {
       if (newItems && Array.isArray(newItems)) {
@@ -96,18 +63,24 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
 
     this.addAnyNewAxes = function (configAxes, chart, isX) {
       if (configAxes && Array.isArray(configAxes)) {
-          angular.forEach(configAxes, function (s) {
-            if (!chart.get(s.id)) {
-              chart.addAxis(s, isX);
-            }
-          });
-        }
+        angular.forEach(configAxes, function (s) {
+          if (!chart.get(s.id)) {
+            chart.addAxis(s, isX);
+          }
+        });
+      }
     };
 
-    this.$doCheck = function () {
-      if (!detector(ctrl.config, prevConfig)) {
-        prevConfig = angular.merge({}, ctrl.config);
+    this.$onChanges = function (changes) {
+      if (changes.config.currentValue) {
         mergedConfig = getMergedOptions($element, ctrl.config, seriesId);
+        if (!ctrl.chart) {
+          ctrl.chart = new Highcharts[getChartType(mergedConfig)](mergedConfig);
+        }
+
+        ctrl.config.getChartObj = function () {
+          return ctrl.chart;
+        };
 
         //Remove any unlinked objects before adding
         this.removeUnlinkedObjects(mergedConfig);
@@ -127,6 +100,18 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
         }
 
         ctrl.chart.update(mergedConfig, true);
+
+
+        // Fix resizing bug
+        // https://github.com/pablojim/highcharts-ng/issues/550
+        var originalWidth = $element[0].clientWidth;
+        var originalHeight = $element[0].clientHeight;
+
+        $timeout(function () {
+          if ($element[0].clientWidth !== originalWidth || $element[0].clientHeight !== originalHeight) {
+            ctrl.chart.reflow();
+          }
+        }, 0, false);
       }
     };
 
@@ -204,5 +189,13 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
     return ids;
   }
 
+  return angular.module('highcharts-ng', [])
+    .component('highchart', {
+      bindings: {
+        config: '<'
+      },
+      controller: HighChartNGController
+    })
+    .name;
 
-}());
+}));
