@@ -18,6 +18,7 @@
   'use strict';
 
   HighChartNGController.$inject = ['$element', '$timeout'];
+
   function HighChartNGController($element, $timeout) {
     var seriesId = 0;
     var yAxisId = 0;
@@ -68,44 +69,43 @@
     this.$onChanges = function (changes) {
       if (changes.config.currentValue) {
         mergedConfig = getMergedOptions($element, ctrl.config, seriesId);
-        if (!ctrl.chart) {
-          ctrl.chart = new Highcharts[getChartType(mergedConfig)](mergedConfig);
-        }
-
         ctrl.config.getChartObj = function () {
           return ctrl.chart;
         };
 
-        //Remove any unlinked objects before adding
-        this.removeUnlinkedObjects(mergedConfig);
+        if (!ctrl.chart) {
+          ctrl.chart = new Highcharts[getChartType(mergedConfig)](mergedConfig);
 
-        //Allows dynamic adding Axes
-        this.addAnyNewAxes(mergedConfig.yAxis, ctrl.chart, false);
-        this.addAnyNewAxes(mergedConfig.xAxis, ctrl.chart, true);
+          // Fix resizing bug
+          // https://github.com/pablojim/highcharts-ng/issues/550
+          var originalWidth = $element[0].clientWidth;
+          var originalHeight = $element[0].clientHeight;
 
-        //Allows dynamic adding of series
-        if (mergedConfig.series) {
-          // Add any new series
-          angular.forEach(ctrl.config.series, function (s) {
-            if (!ctrl.chart.get(s.id)) {
-              ctrl.chart.addSeries(s);
+          $timeout(function () {
+            if ($element[0].clientWidth !== originalWidth || $element[0].clientHeight !== originalHeight) {
+              ctrl.chart.reflow();
             }
-          });
-        }
+          }, 0, false);
+        } else {
+          //Remove any unlinked objects before adding
+          this.removeUnlinkedObjects(mergedConfig);
 
-        ctrl.chart.update(mergedConfig, true);
+          //Allows dynamic adding Axes
+          this.addAnyNewAxes(mergedConfig.yAxis, ctrl.chart, false);
+          this.addAnyNewAxes(mergedConfig.xAxis, ctrl.chart, true);
 
-
-        // Fix resizing bug
-        // https://github.com/pablojim/highcharts-ng/issues/550
-        var originalWidth = $element[0].clientWidth;
-        var originalHeight = $element[0].clientHeight;
-
-        $timeout(function () {
-          if ($element[0].clientWidth !== originalWidth || $element[0].clientHeight !== originalHeight) {
-            ctrl.chart.reflow();
+          //Allows dynamic adding of series
+          if (mergedConfig.series) {
+            // Add any new series
+            angular.forEach(ctrl.config.series, function (s) {
+              if (!ctrl.chart.get(s.id)) {
+                ctrl.chart.addSeries(s);
+              }
+            });
           }
-        }, 0, false);
+
+          ctrl.chart.update(mergedConfig, true);
+        }
       }
     };
 
