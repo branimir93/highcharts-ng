@@ -19,6 +19,7 @@
   "devDependencies": {
     "angular": "^1.5.7",
     "angular-mocks": "^1.5.7",
+    "highcharts": "^5.0.9"
     "connect-livereload": "~0.5.3",
     "grunt": "^1.0.1",
     "grunt-banner": "^0.6.0",
@@ -47,7 +48,8 @@
     "test": "grunt test"
   },
   "main": "./dist/highcharts-ng",
-  "dependencies": {
+  "peerDependencies": {
+    "angular": "^1.5.0",
     "highcharts": "^5.0.9"
   }
 }
